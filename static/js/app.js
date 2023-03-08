@@ -16,40 +16,22 @@ function init() {
       dropdown.append("option").text(x).property("value", x);
     });
 
-    // use the first ID to generate the graphs through the respective functions
+    // use the first ID to call the optionChanged() function
     let init_sample = ids[0];
-    populateDemographicsBox(init_sample);
-    createbarchart(init_sample);
-    createbubblechart(init_sample);
-    creategauge(init_sample);
+    optionChanged(init_sample);
+  
   });
 }
 
-// Populate the Demographics Box
-function populateDemographicsBox(activesample) {
-  d3.json(data_source).then((d) => {
-    let demographicData = d.metadata.filter((d) => d.id == activesample);
-
-    // clear the demo box otherwise append will append onChange
-    d3.select("#sample-metadata").html("");
-
-    Object.entries(demographicData[0]).map(([k, v]) => {
-      d3.select("#sample-metadata").append("ul").text(`${k}: ${v}`);
-    });
-  });
-}
 
 //create the barchart
-function createbarchart(activesample) {
-  d3.json(data_source).then((d) => {
-    let barchartData = d.samples.filter((d) => d.id == activesample);
-    console.log("barchartData", barchartData);
-
+function createbarchart(y, x, text) {
+  
     let barChart = [
       {
-        y: barchartData[0].otu_ids.slice(0, 10).map((id) => `OTU ${id}`).reverse(),
-        x: barchartData[0].sample_values.slice(0, 10).reverse(),
-        text: barchartData[0].otu_labels.slice(0, 10).reverse(),
+        y: y,
+        x: x,
+        text: text,
         type: "bar",
         orientation: "h",
       },
@@ -62,24 +44,23 @@ function createbarchart(activesample) {
     };
 
     Plotly.newPlot("bar", barChart, layout);
-  });
+  
 }
 
 //create the bubblechart
-function createbubblechart(activesample) {
-  d3.json(data_source).then((d) => {
-    let bubbleChartData = d.samples.filter((d) => d.id == activesample);
+function createbubblechart(y_bubble,x_bubble, text_bubble) {
+  
 
     let bubbleChart = [
       {
-        y: bubbleChartData[0].sample_values,
-        x: bubbleChartData[0].otu_ids,
+        y: y_bubble,
+        x: x_bubble,
         type: "bubble",
         mode: "markers",
-        text: bubbleChartData[0].otu_labels,
+        text: text_bubble,
         marker: {
-          size: bubbleChartData[0].sample_values,
-          color: bubbleChartData[0].otu_ids,
+          size: y_bubble,
+          color: x_bubble,
           colorscale: "Earth",
         },
       },
@@ -92,15 +73,43 @@ function createbubblechart(activesample) {
     };
 
     Plotly.newPlot("bubble", bubbleChart, layout);
-  });
+
 }
 
 // optionChanged function as per line 25 index.html (<select id="selDataset" onchange="optionChanged(this.value)"></select>)
 function optionChanged(activesample) {
-  populateDemographicsBox(activesample);
-  createbarchart(activesample);
-  createbubblechart(activesample);
+  
+  d3.json(data_source).then((d) => {
+
+    //fill the demographic info
+    let demographicData = d.metadata.filter((d) => d.id == activesample);
+    // empty box so appemd does not just append
+    d3.select("#sample-metadata").html("");
+    //assign keys and values to a list within the box
+    Object.entries(demographicData[0]).map(([k, v]) => {
+      d3.select("#sample-metadata").append("h6").text(`${k}: ${v}`)
+    });
+
+    // create the barchart variables to read into the barchart function
+    let barchartData = d.samples.filter((d) => d.id == activesample);
+    let y = barchartData[0].otu_ids.slice(0, 10).map((id) => `OTU ${id}`).reverse();
+    let x = barchartData[0].sample_values.slice(0, 10).reverse();
+    let text = barchartData[0].otu_labels.slice(0, 10).reverse();
+
+    // create the bubblechart variables to read into the bubblechart function
+    let bubbleChartData = d.samples.filter((d) => d.id == activesample);
+    let y_bubble = bubbleChartData[0].sample_values;
+    let x_bubble =bubbleChartData[0].otu_ids;
+    let text_bubble = bubbleChartData[0].otu_labels;
+
+     // populateDemographicsBox(activesample);
+  createbarchart(y, x, text);
+  createbubblechart(y_bubble,x_bubble, text_bubble);
   creategauge(activesample);
+
+
+  });
+ 
 }
 
 // // call the initialise function
